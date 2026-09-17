@@ -1,0 +1,8 @@
+1. Create the virtual environment:
+python -m venv .venv
+
+2. Activate it
+.\.venv\Scripts\Activate.ps1
+
+If you're using Git Bash on Windows
+source .venv/Scripts/activate
