@@ -28,3 +28,23 @@ So when we say an LLM has "conversation memory", at this basic level we're reall
 
 
 ## 5. Execute the tool and return the result to the LLM
+from langchain.agents import create_agent
+```
+agent = create_agent(
+    model=llm,
+    tools=[get_account_balance],
+)
+
+result = agent.invoke(
+    {
+        "messages": [
+            {
+                "role": "user",
+                "content": "Get my current account balance."
+            }
+        ]
+    }
+)
+
+print(result["messages"][-1].content)
+```

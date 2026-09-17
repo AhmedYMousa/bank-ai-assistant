@@ -12,10 +12,20 @@ def get_account_balance() -> float:
     return 1250.75
 
 
+@tool
+def get_recent_transactions() -> list:
+    """Get the most recent transactions for the authenticated user."""
+    return [
+        {"date": "2026-09-15", "description": "Supermarket", "amount": -45.20},
+        {"date": "2026-09-14", "description": "Salary", "amount": 2500.00},
+        {"date": "2026-09-13", "description": "Coffee Shop", "amount": -4.50},
+    ]
+
 ############# Utils #################
 def print_agent_conversation(messages):
     for message in messages:
         print(type(message).__name__)
+       # print(message)
         print(message.content.strip())
         print("---")
 
@@ -28,7 +38,7 @@ llm = ChatOllama(
 
 agent = create_agent(
     model=llm,
-    tools=[get_account_balance],
+    tools=[get_account_balance, get_recent_transactions],
 )
 
 messages = [
@@ -38,7 +48,7 @@ messages = [
 
 messages.append(
     HumanMessage(content="""
-        Get my current balance
+        What is my balance, and what is my net transaction amount based only on the transactions you retrieved?
     """)
 )
 
