@@ -48,3 +48,11 @@ result = agent.invoke(
 
 print(result["messages"][-1].content)
 ```
+
+
+## Work with Pydantic
+Pydantic is a Python library for data validation and structured data parsing.
+
+The easiest way to think about it:
+
+Pydantic lets you define what your data should look like, and then validates incoming data against that definition.

@@ -2,24 +2,8 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain.agents import create_agent
-
-############# AI tools #################
-
-
-@tool
-def get_account_balance() -> float:
-    """Get the current account balance for the authenticated user."""
-    return 1250.75
-
-
-@tool
-def get_recent_transactions() -> list:
-    """Get the most recent transactions for the authenticated user."""
-    return [
-        {"date": "2026-09-15", "description": "Supermarket", "amount": -45.20},
-        {"date": "2026-09-14", "description": "Salary", "amount": 2500.00},
-        {"date": "2026-09-13", "description": "Coffee Shop", "amount": -4.50},
-    ]
+from pydantic import BaseModel
+from models import Transaction, AccountBalance
 
 ############# Utils #################
 def print_agent_conversation(messages):
@@ -30,6 +14,47 @@ def print_agent_conversation(messages):
         print("---")
 
 
+def _get_recent_transactions() -> list[Transaction]:
+    return [
+        Transaction(
+            date="2026-09-15",
+            description="Supermarket",
+            amount=-45.20,
+        ),
+        Transaction(
+            date="2026-09-14",
+            description="Salary",
+            amount=2500.00,
+        ),
+        Transaction(
+            date="2026-09-13",
+            description="Coffee Shop",
+            amount=-4.50,
+        ),
+    ]
+
+   
+############# AI tools #################
+@tool
+def get_account_balance() -> AccountBalance:
+    """Get the current account balance for the authenticated user."""
+    return AccountBalance(amount=1250.75, currency="USD")
+
+
+@tool
+def get_recent_transactions() -> list[Transaction]:
+    """Get the most recent transactions for the authenticated user."""
+    return _get_recent_transactions()
+
+
+@tool
+def calc_net_transactions() -> float:
+    """Calculate the net amount of the recent transactions."""
+    transactions = _get_recent_transactions()
+
+    return sum(t.amount for t in transactions)
+
+
 ############# Main code #################
 llm = ChatOllama(
     model="llama3.2:1b"
@@ -38,7 +63,7 @@ llm = ChatOllama(
 
 agent = create_agent(
     model=llm,
-    tools=[get_account_balance, get_recent_transactions],
+    tools=[get_account_balance, get_recent_transactions, calc_net_transactions],
 )
 
 messages = [
