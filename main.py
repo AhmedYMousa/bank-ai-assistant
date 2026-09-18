@@ -6,6 +6,8 @@ from pydantic import BaseModel
 from models import Transaction, AccountBalance
 
 ############# Utils #################
+
+
 def print_agent_conversation(messages):
     for message in messages:
         print(type(message).__name__)
@@ -19,7 +21,7 @@ def _get_recent_transactions() -> list[Transaction]:
         Transaction(
             date="2026-09-15",
             description="Supermarket",
-            amount=-45.20,
+            amount=-45.0,
         ),
         Transaction(
             date="2026-09-14",
@@ -29,11 +31,11 @@ def _get_recent_transactions() -> list[Transaction]:
         Transaction(
             date="2026-09-13",
             description="Coffee Shop",
-            amount=-4.50,
+            amount=-5.00,
         ),
     ]
 
-   
+
 ############# AI tools #################
 @tool
 def get_account_balance() -> AccountBalance:
@@ -43,15 +45,22 @@ def get_account_balance() -> AccountBalance:
 
 @tool
 def get_recent_transactions() -> list[Transaction]:
-    """Get the most recent transactions for the authenticated user."""
+    """Get the recent transactions for the authenticated user.
+
+    Use this tool when the user wants to see, inspect, or discuss
+    individual transactions.
+    """
     return _get_recent_transactions()
 
 
 @tool
 def calc_net_transactions() -> float:
-    """Calculate the net amount of the recent transactions."""
-    transactions = _get_recent_transactions()
+    """Calculate the net transaction amount from the user's recent transactions.
 
+    Use this tool when the user asks for the net, total, or combined
+    amount of their transactions. Do not calculate the amount yourself.
+    """
+    transactions = _get_recent_transactions()
     return sum(t.amount for t in transactions)
 
 
