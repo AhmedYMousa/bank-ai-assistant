@@ -2,8 +2,9 @@ from langchain_ollama import ChatOllama
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.tools import tool
 from langchain.agents import create_agent
+from langgraph.prebuilt import ToolRuntime
 from pydantic import BaseModel
-from models import Transaction, AccountBalance
+from models import Transaction, AccountBalance,  UserContext
 
 ############# Utils #################
 
@@ -16,7 +17,9 @@ def print_agent_conversation(messages):
         print("---")
 
 
-def _get_recent_transactions() -> list[Transaction]:
+def _get_recent_transactions(user: UserContext) -> list[Transaction]:
+    print(f"Loading transactions for {user.user_id}")
+
     return [
         Transaction(
             date="2026-09-15",
@@ -44,24 +47,29 @@ def get_account_balance() -> AccountBalance:
 
 
 @tool
-def get_recent_transactions() -> list[Transaction]:
+def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> list[Transaction]:
     """Get the recent transactions for the authenticated user.
 
     Use this tool when the user wants to see, inspect, or discuss
     individual transactions.
     """
-    return _get_recent_transactions()
+    return _get_recent_transactions(runtime.context)
 
 
 @tool
-def calc_net_transactions() -> float:
+def calc_net_transactions(runtime: ToolRuntime[UserContext]) -> float:
     """Calculate the net transaction amount from the user's recent transactions.
 
     Use this tool when the user asks for the net, total, or combined
     amount of their transactions. Do not calculate the amount yourself.
     """
-    transactions = _get_recent_transactions()
-    return sum(t.amount for t in transactions)
+    transactions = _get_recent_transactions(runtime.context)
+    # We've changed the response into pushing deterministic semantics into deterministic code
+    return {
+        "type": "net_transaction_amount",
+        "currency": "USD",
+        "amount": sum(t.amount for t in transactions),
+    }
 
 
 ############# Main code #################
@@ -69,10 +77,12 @@ llm = ChatOllama(
     model="llama3.2:1b"
 )
 
+tools_list = [get_account_balance,
+              get_recent_transactions, calc_net_transactions]
 
 agent = create_agent(
     model=llm,
-    tools=[get_account_balance, get_recent_transactions, calc_net_transactions],
+    tools=tools_list
 )
 
 messages = [
@@ -86,8 +96,16 @@ messages.append(
     """)
 )
 
-result = agent.invoke({"messages": messages})
+current_user_context = UserContext(
+    user_id=1432552
+)
 
+result = agent.invoke({"messages": messages}, context = current_user_context)
+
+# llm_with_tools = llm.bind_tools(tools_list)
+
+# response = llm_with_tools.invoke(messages)
+# print(response.tool_calls)
 
 # Only invoke this when the file is executed directly, such as running python main.py
 if __name__ == "__main__":
