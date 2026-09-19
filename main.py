@@ -4,7 +4,7 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langgraph.prebuilt import ToolRuntime
 from pydantic import BaseModel
-from models import Transaction, AccountBalance,  UserContext
+from models import Transaction, AccountBalance, TransactionServiceError,  UserContext
 
 ############# Utils #################
 
@@ -12,31 +12,34 @@ from models import Transaction, AccountBalance,  UserContext
 def print_agent_conversation(messages):
     for message in messages:
         print(type(message).__name__)
-       # print(message)
-        print(message.content.strip())
+        print(message)
+        # print(message.content.strip())
         print("---")
 
 
 def _get_recent_transactions(user: UserContext) -> list[Transaction]:
-    print(f"Loading transactions for {user.user_id}")
+    raise TransactionServiceError(
+        "Transaction service is currently unavailable."
+    )
+    # print(f"Loading transactions for {user.user_id}")
 
-    return [
-        Transaction(
-            date="2026-09-15",
-            description="Supermarket",
-            amount=-45.0,
-        ),
-        Transaction(
-            date="2026-09-14",
-            description="Salary",
-            amount=2500.00,
-        ),
-        Transaction(
-            date="2026-09-13",
-            description="Coffee Shop",
-            amount=-5.00,
-        ),
-    ]
+    # return [
+    #     Transaction(
+    #         date="2026-09-15",
+    #         description="Supermarket",
+    #         amount=-45.0,
+    #     ),
+    #     Transaction(
+    #         date="2026-09-14",
+    #         description="Salary",
+    #         amount=2500.00,
+    #     ),
+    #     Transaction(
+    #         date="2026-09-13",
+    #         description="Coffee Shop",
+    #         amount=-5.00,
+    #     ),
+    # ]
 
 
 ############# AI tools #################
@@ -53,7 +56,15 @@ def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> list[Transact
     Use this tool when the user wants to see, inspect, or discuss
     individual transactions.
     """
-    return _get_recent_transactions(runtime.context)
+
+    try:
+        return _get_recent_transactions(runtime.context)
+
+    except TransactionServiceError as error:
+        return {
+            "error": "TRANSACTION_SERVICE_UNAVAILABLE",
+            "message": str(error),
+        }
 
 
 @tool
@@ -63,13 +74,22 @@ def calc_net_transactions(runtime: ToolRuntime[UserContext]) -> float:
     Use this tool when the user asks for the net, total, or combined
     amount of their transactions. Do not calculate the amount yourself.
     """
-    transactions = _get_recent_transactions(runtime.context)
-    # We've changed the response into pushing deterministic semantics into deterministic code
-    return {
-        "type": "net_transaction_amount",
-        "currency": "USD",
-        "amount": sum(t.amount for t in transactions),
-    }
+    try:
+        transactions = _get_recent_transactions(runtime.context)
+        # We've changed the response into pushing deterministic semantics into deterministic code
+        return {
+            "type": "net_transaction_amount",
+            "currency": "USD",
+            "amount": sum(t.amount for t in transactions),
+        }
+    
+    except TransactionServiceError as error:
+        return {
+            "error": "TRANSACTION_SERVICE_UNAVAILABLE",
+            "message": str(error),
+        }
+    
+   
 
 
 ############# Main code #################
@@ -92,15 +112,20 @@ messages = [
 
 messages.append(
     HumanMessage(content="""
-        What is my balance, and what is my net transaction amount based only on the transactions you retrieved?
+        List my recent transactions
     """)
 )
+# messages.append(
+#     HumanMessage(content="""
+#         What is my balance, and what is my net transaction amount based only on the transactions you retrieved?
+#     """)
+# )
 
 current_user_context = UserContext(
     user_id=1432552
 )
 
-result = agent.invoke({"messages": messages}, context = current_user_context)
+result = agent.invoke({"messages": messages}, context=current_user_context)
 
 # llm_with_tools = llm.bind_tools(tools_list)
 

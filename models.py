@@ -16,3 +16,9 @@ class AccountBalance(BaseModel):
 @dataclass
 class UserContext:
     user_id: int
+
+
+
+# 
+class TransactionServiceError(Exception):
+    pass
