@@ -22,3 +22,10 @@ class UserContext:
 # 
 class TransactionServiceError(Exception):
     pass
+
+
+
+class TransactionResult(BaseModel):
+    transactions: list[Transaction] | None = None
+    error: str | None = None
+    message: str | None = None 

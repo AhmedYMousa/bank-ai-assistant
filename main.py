@@ -4,7 +4,7 @@ from langchain_core.tools import tool
 from langchain.agents import create_agent
 from langgraph.prebuilt import ToolRuntime
 from pydantic import BaseModel
-from models import Transaction, AccountBalance, TransactionServiceError,  UserContext
+from models import Transaction, AccountBalance, TransactionResult, TransactionServiceError,  UserContext
 
 ############# Utils #################
 
@@ -18,28 +18,28 @@ def print_agent_conversation(messages):
 
 
 def _get_recent_transactions(user: UserContext) -> list[Transaction]:
-    raise TransactionServiceError(
-        "Transaction service is currently unavailable."
-    )
-    # print(f"Loading transactions for {user.user_id}")
+    # raise TransactionServiceError(
+    #     "Transaction service is currently unavailable."
+    # )
+    print(f"Loading transactions for {user.user_id}")
 
-    # return [
-    #     Transaction(
-    #         date="2026-09-15",
-    #         description="Supermarket",
-    #         amount=-45.0,
-    #     ),
-    #     Transaction(
-    #         date="2026-09-14",
-    #         description="Salary",
-    #         amount=2500.00,
-    #     ),
-    #     Transaction(
-    #         date="2026-09-13",
-    #         description="Coffee Shop",
-    #         amount=-5.00,
-    #     ),
-    # ]
+    return [
+        Transaction(
+            date="2026-09-15",
+            description="Supermarket",
+            amount=-45.0,
+        ),
+        Transaction(
+            date="2026-09-14",
+            description="Salary",
+            amount=2500.00,
+        ),
+        Transaction(
+            date="2026-09-13",
+            description="Coffee Shop",
+            amount=-5.00,
+        ),
+    ]
 
 
 ############# AI tools #################
@@ -50,7 +50,7 @@ def get_account_balance() -> AccountBalance:
 
 
 @tool
-def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> list[Transaction]:
+def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> TransactionResult:
     """Get the recent transactions for the authenticated user.
 
     Use this tool when the user wants to see, inspect, or discuss
@@ -58,17 +58,16 @@ def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> list[Transact
     """
 
     try:
-        return _get_recent_transactions(runtime.context)
+        return TransactionResult(transactions=_get_recent_transactions(runtime.context))
 
     except TransactionServiceError as error:
-        return {
-            "error": "TRANSACTION_SERVICE_UNAVAILABLE",
-            "message": str(error),
-        }
+        return TransactionResult(
+            error="TRANSACTION_SERVICE_UNAVAILABLE",
+            message=str(error))
 
 
 @tool
-def calc_net_transactions(runtime: ToolRuntime[UserContext]) -> float:
+def calc_net_transactions(runtime: ToolRuntime[UserContext]) -> dict:
     """Calculate the net transaction amount from the user's recent transactions.
 
     Use this tool when the user asks for the net, total, or combined
@@ -82,14 +81,12 @@ def calc_net_transactions(runtime: ToolRuntime[UserContext]) -> float:
             "currency": "USD",
             "amount": sum(t.amount for t in transactions),
         }
-    
+
     except TransactionServiceError as error:
         return {
             "error": "TRANSACTION_SERVICE_UNAVAILABLE",
             "message": str(error),
         }
-    
-   
 
 
 ############# Main code #################
@@ -106,14 +103,14 @@ agent = create_agent(
 )
 
 messages = [
-    SystemMessage(content="""
-        You are a helpful bank AI assistant.Be concise and never invent account information.
-    """)]
+    SystemMessage(content="You are a helpful bank AI assistant. "
+                  "Be concise and never invent account information. "
+                  "If a tool returns an error, clearly tell the user that "
+                  "the requested information could not be retrieved. "
+                  "Never invent or substitute data when a tool fails.")]
 
 messages.append(
-    HumanMessage(content="""
-        List my recent transactions
-    """)
+    HumanMessage(content="List my recent transactions")
 )
 # messages.append(
 #     HumanMessage(content="""

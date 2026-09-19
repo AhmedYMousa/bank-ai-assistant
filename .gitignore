@@ -1,0 +1,81 @@
+# =========================
+# Python
+# =========================
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# =========================
+# Testing / Coverage
+# =========================
+
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pyre/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# IDE / Editors
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# =========================
+# Environment / Secrets
+# =========================
+
+.env
+.env.*
+!.env.example
+
+# =========================
+# Jupyter
+# =========================
+
+.ipynb_checkpoints/
+
+# =========================
+# Logs / Temporary files
+# =========================
+
+*.log
+*.tmp
+*.temp
+
+# =========================
+# Local / Generated data
+# =========================
+
+data/
+*.sqlite
+*.sqlite3
+
+# =========================
+# OS files
+# =========================
+
+Thumbs.db
+Desktop.ini

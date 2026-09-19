@@ -121,4 +121,22 @@ The model could potentially:
 - expose it
 - pass a user-supplied ID instead
 
-<h3>📝 Runtime context creates a trusted application → tool boundary.</h3>
+#### 📝 Runtime context creates a trusted application → tool boundary
+
+
+## Fix the tool contract with Pydantic
+Now that we've introduced a controlled error result, our tool has a problem:
+```
+def get_recent_transactions(...) -> list[Transaction]:
+```
+but it can actually return either:
+```
+list[Transaction]
+
+or:
+
+{"error": "...", "message": "..."}
+```
+That's a bad contract.
+
+And this is exactly where Pydantic becomes useful.
