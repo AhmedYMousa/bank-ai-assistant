@@ -15,6 +15,10 @@ def print_agent_conversation(messages):
         print(message)
         # print(message.content.strip())
         print("---")
+    # for message in messages:
+    #     if isinstance(message, ToolMessage):
+    #         print("\nRAW TOOL CONTENT:")
+    #         print(repr(message.content))
 
 
 def _get_recent_transactions(user: UserContext) -> list[Transaction]:
@@ -50,7 +54,7 @@ def get_account_balance() -> AccountBalance:
 
 
 @tool
-def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> TransactionResult:
+def get_recent_transactions(runtime: ToolRuntime[UserContext]) -> dict:
     """Get the recent transactions for the authenticated user.
 
     Use this tool when the user wants to see, inspect, or discuss
@@ -58,12 +62,25 @@ def get_recent_transactions(runtime: ToolRuntime[UserContext],) -> TransactionRe
     """
 
     try:
-        return TransactionResult(transactions=_get_recent_transactions(runtime.context))
+        transactions = _get_recent_transactions(runtime.context)
+        return {
+            "success": True,
+            "transactions": [
+                {
+                    "date": t.date,
+                    "description": t.description,
+                    "amount": t.amount,
+                }
+                for t in transactions
+            ]
+        }
 
     except TransactionServiceError as error:
-        return TransactionResult(
-            error="TRANSACTION_SERVICE_UNAVAILABLE",
-            message=str(error))
+        return {
+            "success": False,
+            "error": "TRANSACTION_SERVICE_UNAVAILABLE",
+            "message": str(error),
+        }
 
 
 @tool
@@ -121,7 +138,6 @@ messages.append(
 current_user_context = UserContext(
     user_id=1432552
 )
-
 result = agent.invoke({"messages": messages}, context=current_user_context)
 
 # llm_with_tools = llm.bind_tools(tools_list)
